@@ -1,0 +1,492 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#142f4b">
+  <meta name="description" content="Der persönliche Notenspiegel für Simon und Luisa.">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Notenspiegel">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" type="image/svg+xml" href="./icons/icon.svg">
+  <link rel="apple-touch-icon" href="./icons/icon-192.png">
+  <title>Notenspiegel</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --navy: #142f4b;
+      --navy-2: #1d456a;
+      --blue: #4d8fce;
+      --mint: #70c9b2;
+      --gold: #f2c45e;
+      --orange: #f3a64d;
+      --ink: #1d2d3e;
+      --muted: #718095;
+      --line: #e4eaf1;
+      --paper: #ffffff;
+      --bg: #f3f6fa;
+      --soft: #eef3f8;
+      --shadow: 0 12px 34px rgba(28, 53, 79, .08);
+      --radius: 22px;
+    }
+    * { box-sizing: border-box; }
+    html { min-height: 100%; background: var(--bg); }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 8% 0%, rgba(106, 174, 221, .12), transparent 27rem),
+        var(--bg);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    button, input, select { font: inherit; }
+    button { -webkit-tap-highlight-color: transparent; }
+    .app-shell { width: min(100%, 760px); margin: 0 auto; padding: 24px 18px 48px; }
+    .topbar { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: 26px; }
+    .brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
+    .brand img { width: 48px; height: 48px; border-radius: 15px; box-shadow: 0 6px 16px rgba(20,47,75,.15); }
+    .brand-name { margin: 0; color: var(--navy); font-size: 1.35rem; font-weight: 800; letter-spacing: -.045em; }
+    .brand-subtitle { margin: 2px 0 0; color: var(--muted); font-size: .76rem; }
+    .top-actions { display: flex; align-items: center; gap: 8px; }
+    .icon-button, .small-button {
+      display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+      min-height: 40px; border: 1px solid var(--line); border-radius: 13px;
+      padding: 0 12px; color: var(--navy); background: rgba(255,255,255,.82);
+      cursor: pointer; font-size: .82rem; font-weight: 700;
+    }
+    .icon-button { width: 40px; padding: 0; font-size: 1.1rem; }
+    .install-button { display: none; }
+    .eyebrow { margin: 0 0 7px; color: var(--blue); font-size: .72rem; font-weight: 800; letter-spacing: .11em; text-transform: uppercase; }
+    .intro { margin-bottom: 18px; }
+    .intro h2 { margin: 0; color: var(--navy); font-size: clamp(1.5rem, 5vw, 2rem); letter-spacing: -.055em; }
+    .intro p { margin: 7px 0 0; color: var(--muted); font-size: .93rem; line-height: 1.5; }
+    .child-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; padding: 6px; margin: 0 0 18px; border: 1px solid #e7edf4; border-radius: 17px; background: rgba(255,255,255,.72); }
+    .child-tab {
+      display: flex; justify-content: center; align-items: center; gap: 9px;
+      min-height: 47px; border: 0; border-radius: 12px; color: #65758a;
+      background: transparent; cursor: pointer; font-weight: 750; transition: .18s ease;
+    }
+    .child-tab .avatar { display: grid; place-items: center; width: 25px; height: 25px; border-radius: 9px; color: var(--navy); background: #e9f0f7; font-size: .76rem; font-weight: 800; }
+    .child-tab[aria-selected="true"] { color: white; background: linear-gradient(135deg, var(--navy), #234d72); box-shadow: 0 5px 13px rgba(20,47,75,.16); }
+    .child-tab[aria-selected="true"] .avatar { color: var(--navy); background: rgba(255,255,255,.94); }
+    .card { border: 1px solid rgba(222,231,240,.9); border-radius: var(--radius); background: var(--paper); box-shadow: var(--shadow); }
+    .entry-card { padding: 20px; margin-bottom: 23px; }
+    .section-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 17px; }
+    .section-heading h3 { margin: 0; color: var(--navy); font-size: 1.05rem; letter-spacing: -.025em; }
+    .section-heading p { margin: 4px 0 0; color: var(--muted); font-size: .8rem; }
+    .section-icon { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 12px; color: var(--navy); background: #edf4fa; font-size: 1.05rem; }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 13px; }
+    .field { display: flex; flex-direction: column; gap: 7px; min-width: 0; }
+    .field.full { grid-column: 1 / -1; }
+    .field label { color: #52647a; font-size: .78rem; font-weight: 750; }
+    .field select, .field input {
+      width: 100%; min-height: 49px; padding: 0 13px; border: 1px solid #dce5ee;
+      border-radius: 13px; outline: none; color: var(--ink); background: #fbfcfe;
+      transition: border-color .15s, box-shadow .15s;
+    }
+    .field select:focus, .field input:focus { border-color: #76a9d5; box-shadow: 0 0 0 3px rgba(77,143,206,.13); }
+    .field input::placeholder { color: #9aa7b6; }
+    .form-bottom { display: flex; align-items: end; gap: 12px; margin-top: 14px; }
+    .date-field { width: 42%; }
+    .primary-button {
+      display: inline-flex; justify-content: center; align-items: center; gap: 9px;
+      flex: 1; min-height: 49px; border: 0; border-radius: 14px; padding: 0 17px;
+      color: white; background: linear-gradient(135deg, #173957, #28577f);
+      box-shadow: 0 7px 15px rgba(20,47,75,.17); cursor: pointer; font-weight: 800;
+      transition: transform .15s, box-shadow .15s;
+    }
+    .primary-button:active { transform: translateY(1px); box-shadow: 0 3px 9px rgba(20,47,75,.16); }
+    .plus { font-size: 1.3rem; font-weight: 400; line-height: 1; }
+    .privacy-note { display: flex; align-items: center; gap: 7px; margin: 13px 2px 0; color: #8492a2; font-size: .72rem; }
+    .privacy-note .dot { width: 7px; height: 7px; border-radius: 50%; background: #68b99e; }
+    .overview-card { padding: 20px; }
+    .overview-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 15px; }
+    .overview-head h3 { margin: 0; color: var(--navy); font-size: 1.13rem; letter-spacing: -.035em; }
+    .overview-head p { margin: 4px 0 0; color: var(--muted); font-size: .79rem; }
+    .count-pill { flex: 0 0 auto; padding: 7px 10px; border-radius: 99px; color: #28577f; background: #edf4fa; font-size: .74rem; font-weight: 800; }
+    .subject-list { display: grid; gap: 9px; }
+    .subject-card { overflow: hidden; border: 1px solid var(--line); border-radius: 15px; background: #fff; }
+    .subject-card[open] { border-color: #d7e3ef; }
+    .subject-card summary { display: flex; align-items: center; gap: 10px; min-height: 53px; padding: 0 13px; cursor: pointer; list-style: none; }
+    .subject-card summary::-webkit-details-marker { display: none; }
+    .subject-emoji { display: grid; place-items: center; flex: 0 0 31px; width: 31px; height: 31px; border-radius: 10px; background: #f1f5f9; font-size: 1rem; }
+    .subject-name { flex: 1; color: #2b3e53; font-size: .88rem; font-weight: 780; }
+    .subject-count { color: #8290a0; font-size: .72rem; font-weight: 700; }
+    .chevron { width: 8px; height: 8px; margin: 0 3px 4px 6px; border-right: 1.7px solid #718196; border-bottom: 1.7px solid #718196; transform: rotate(45deg); transition: transform .15s; }
+    details[open] .chevron { margin-bottom: -4px; transform: rotate(225deg); }
+    .grade-list { padding: 0 12px 10px; }
+    .grade-row { display: flex; align-items: center; gap: 11px; padding: 10px 2px; border-top: 1px solid #f0f3f7; }
+    .grade-value { display: grid; place-items: center; flex: 0 0 44px; min-width: 44px; min-height: 37px; padding: 0 5px; border-radius: 11px; color: var(--navy); background: #edf3f9; font-size: .98rem; font-weight: 850; overflow-wrap: anywhere; }
+    .grade-meta { display: flex; flex: 1; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 10px; min-width: 0; }
+    .grade-type { color: #4c5e72; font-size: .8rem; font-weight: 650; }
+    .grade-date { color: #91a0af; font-size: .72rem; white-space: nowrap; }
+    .delete-button { display: grid; place-items: center; flex: 0 0 30px; width: 30px; height: 30px; border: 0; border-radius: 9px; color: #a0aab6; background: transparent; cursor: pointer; font-size: 1.12rem; }
+    .delete-button:hover { color: #b44c4c; background: #fff0f0; }
+    .no-grade { padding: 0 2px 5px; color: #a0aab6; font-size: .76rem; }
+    .empty-banner { display: flex; align-items: center; gap: 12px; padding: 14px; margin-bottom: 13px; border-radius: 14px; color: #61758a; background: #f4f8fb; font-size: .8rem; line-height: 1.45; }
+    .empty-banner span:first-child { font-size: 1.2rem; }
+    .backup-row { display: flex; justify-content: flex-end; gap: 8px; margin-top: 15px; }
+    .small-button:hover, .icon-button:hover { border-color: #cbd9e7; background: #f8fbfe; }
+    .toast { position: fixed; z-index: 20; left: 50%; bottom: max(22px, env(safe-area-inset-bottom)); max-width: calc(100% - 32px); padding: 12px 17px; border-radius: 13px; color: white; background: #183a58; box-shadow: 0 10px 30px rgba(10,30,50,.22); font-size: .84rem; font-weight: 700; opacity: 0; pointer-events: none; transform: translate(-50%, 12px); transition: .22s ease; }
+    .toast.show { opacity: 1; transform: translate(-50%, 0); }
+    .footer { padding: 18px 5px 0; color: #97a3b1; text-align: center; font-size: .7rem; line-height: 1.55; }
+    .hidden { display: none !important; }
+    @media (max-width: 520px) {
+      .app-shell { padding: 18px 13px 34px; }
+      .topbar { margin-bottom: 22px; }
+      .brand img { width: 43px; height: 43px; }
+      .brand-name { font-size: 1.2rem; }
+      .brand-subtitle { font-size: .7rem; }
+      .top-actions .small-button { min-height: 37px; padding: 0 9px; font-size: .75rem; }
+      .entry-card, .overview-card { padding: 16px; border-radius: 19px; }
+      .form-grid { gap: 11px; }
+      .field select, .field input { min-height: 47px; padding: 0 10px; font-size: .88rem; }
+      .form-bottom { align-items: stretch; flex-direction: column; }
+      .date-field { width: 100%; }
+      .primary-button { width: 100%; }
+      .grade-meta { flex-direction: column; align-items: flex-start; gap: 3px; }
+    }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; } }
+  </style>
+</head>
+<body>
+  <main class="app-shell">
+    <header class="topbar">
+      <div class="brand">
+        <img src="./icons/icon.svg" alt="" width="48" height="48">
+        <div>
+          <h1 class="brand-name">Notenspiegel</h1>
+          <p class="brand-subtitle">Alle Noten im Blick.</p>
+        </div>
+      </div>
+      <div class="top-actions">
+        <button class="small-button install-button" id="installButton" type="button">＋ Installieren</button>
+        <button class="icon-button" id="exportTopButton" type="button" title="Datensicherung exportieren" aria-label="Datensicherung exportieren">↥</button>
+      </div>
+    </header>
+
+    <section class="intro">
+      <p class="eyebrow">Euer Familien-Notenbuch</p>
+      <h2 id="childHeading">Simon im Überblick</h2>
+      <p>Noten einfach eintragen und nach Fächern sortiert wiederfinden.</p>
+    </section>
+
+    <nav class="child-tabs" aria-label="Kind auswählen">
+      <button class="child-tab" type="button" data-child="Simon" aria-selected="true">
+        <span class="avatar">S</span><span>Simon</span>
+      </button>
+      <button class="child-tab" type="button" data-child="Luisa" aria-selected="false">
+        <span class="avatar">L</span><span>Luisa</span>
+      </button>
+    </nav>
+
+    <section class="card entry-card" aria-labelledby="entryHeading">
+      <div class="section-heading">
+        <div>
+          <h3 id="entryHeading">Neue Note eintragen</h3>
+          <p>Für <strong id="entryChildName">Simon</strong></p>
+        </div>
+        <span class="section-icon" aria-hidden="true">✎</span>
+      </div>
+      <form id="gradeForm">
+        <div class="form-grid">
+          <div class="field">
+            <label for="subjectSelect">Fach</label>
+            <select id="subjectSelect" required>
+              <option value="" disabled selected>Fach auswählen</option>
+              <option>Biologie</option>
+              <option>Deutsch</option>
+              <option>Englisch</option>
+              <option>Mathe</option>
+              <option>Religion</option>
+              <option>Bildende Kunst</option>
+              <option>Sport</option>
+              <option>Geografie</option>
+              <option>Informatik</option>
+              <option>Musik</option>
+              <option>Sachkunde</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="typeSelect">Art der Note</label>
+            <select id="typeSelect" required>
+              <option value="" disabled selected>Art auswählen</option>
+              <option>Arbeit</option>
+              <option>Test</option>
+              <option>Mündliche Note</option>
+              <option>Sonstiges</option>
+            </select>
+          </div>
+          <div class="field full">
+            <label for="gradeInput">Note</label>
+            <input id="gradeInput" type="text" maxlength="16" placeholder="z. B. 1, 2, 3/4, 4+ oder 5-" autocomplete="off" required>
+          </div>
+        </div>
+        <div class="form-bottom">
+          <div class="field date-field">
+            <label for="dateInput">Datum</label>
+            <input id="dateInput" type="date" required>
+          </div>
+          <button class="primary-button" type="submit"><span class="plus">＋</span> Note hinzufügen</button>
+        </div>
+      </form>
+      <p class="privacy-note"><span class="dot"></span> Deine Daten bleiben lokal auf diesem Gerät.</p>
+    </section>
+
+    <section class="card overview-card" aria-labelledby="overviewHeading">
+      <div class="overview-head">
+        <div>
+          <h3 id="overviewHeading">Notenübersicht</h3>
+          <p id="overviewSubheading">Alle Fächer von Simon</p>
+        </div>
+        <span class="count-pill" id="totalCount">0 Noten</span>
+      </div>
+      <div id="emptyBanner" class="empty-banner">
+        <span aria-hidden="true">✦</span>
+        <span>Hier erscheinen die eingetragenen Noten. Wähle oben ein Fach und trage deine erste Note ein.</span>
+      </div>
+      <div class="subject-list" id="subjectList"></div>
+      <div class="backup-row">
+        <button class="small-button" id="importButton" type="button">↧ Sicherung importieren</button>
+        <input class="hidden" id="importInput" type="file" accept="application/json,.json">
+      </div>
+    </section>
+
+    <p class="footer">Notenspiegel · Privat und lokal gespeichert<br>Bitte exportiere gelegentlich eine Sicherung deiner Daten.</p>
+  </main>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    (() => {
+      "use strict";
+      const STORAGE_KEY = "notenspiegel.data.v1";
+      const CHILDREN = ["Simon", "Luisa"];
+      const SUBJECTS = [
+        ["Biologie", "🌿"], ["Deutsch", "📚"], ["Englisch", "🌐"],
+        ["Mathe", "📐"], ["Religion", "✨"], ["Bildende Kunst", "🎨"],
+        ["Sport", "🏃"], ["Geografie", "🌍"], ["Informatik", "💻"],
+        ["Musik", "🎵"], ["Sachkunde", "🌱"]
+      ];
+      const TYPES = ["Arbeit", "Test", "Mündliche Note", "Sonstiges"];
+      let currentChild = "Simon";
+      let deferredInstallPrompt = null;
+      let toastTimer = null;
+
+      const $ = (selector) => document.querySelector(selector);
+      const today = () => {
+        const now = new Date();
+        const local = new Date(now.getTime() - now.getTimezoneOffset() * 60000);
+        return local.toISOString().slice(0, 10);
+      };
+      const newId = () => (window.crypto && crypto.randomUUID)
+        ? crypto.randomUUID()
+        : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+      const emptyData = () => ({ Simon: [], Luisa: [] });
+
+      function loadData() {
+        try {
+          const raw = localStorage.getItem(STORAGE_KEY);
+          if (!raw) return emptyData();
+          const parsed = JSON.parse(raw);
+          return {
+            Simon: Array.isArray(parsed.Simon) ? parsed.Simon : [],
+            Luisa: Array.isArray(parsed.Luisa) ? parsed.Luisa : []
+          };
+        } catch (error) {
+          console.warn("Notenspiegel: gespeicherte Daten konnten nicht gelesen werden.", error);
+          return emptyData();
+        }
+      }
+      let data = loadData();
+
+      function saveData() {
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+          return true;
+        } catch (error) {
+          showToast("Speichern nicht möglich. Bitte Gerätespeicher prüfen.");
+          return false;
+        }
+      }
+      function escapeHtml(value) {
+        return String(value).replace(/[&<>"']/g, (char) => ({
+          "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+        })[char]);
+      }
+      function formatDate(value) {
+        if (!value) return "";
+        const parts = value.split("-").map(Number);
+        if (parts.length !== 3 || parts.some(Number.isNaN)) return escapeHtml(value);
+        return new Intl.DateTimeFormat("de-DE").format(new Date(parts[0], parts[1] - 1, parts[2]));
+      }
+      function showToast(message) {
+        const toast = $("#toast");
+        toast.textContent = message;
+        toast.classList.add("show");
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => toast.classList.remove("show"), 2600);
+      }
+      function render() {
+        const notes = data[currentChild];
+        const total = notes.length;
+        $("#childHeading").textContent = `${currentChild} im Überblick`;
+        $("#entryChildName").textContent = currentChild;
+        $("#overviewSubheading").textContent = `Alle Fächer von ${currentChild}`;
+        $("#totalCount").textContent = `${total} ${total === 1 ? "Note" : "Noten"}`;
+        document.querySelectorAll(".child-tab").forEach((tab) => {
+          tab.setAttribute("aria-selected", String(tab.dataset.child === currentChild));
+        });
+        $("#emptyBanner").classList.toggle("hidden", total > 0);
+
+        $("#subjectList").innerHTML = SUBJECTS.map(([subject, emoji]) => {
+          const subjectNotes = notes
+            .filter((note) => note.subject === subject)
+            .sort((a, b) => (b.date || "").localeCompare(a.date || "") || (b.createdAt || 0) - (a.createdAt || 0));
+          const count = subjectNotes.length;
+          const rows = count
+            ? subjectNotes.map((note) => `
+                <div class="grade-row">
+                  <div class="grade-value">${escapeHtml(note.grade)}</div>
+                  <div class="grade-meta">
+                    <span class="grade-type">${escapeHtml(note.type)}</span>
+                    <time class="grade-date" datetime="${escapeHtml(note.date || "")}">${formatDate(note.date)}</time>
+                  </div>
+                  <button class="delete-button" type="button" data-delete="${escapeHtml(note.id)}" aria-label="Note ${escapeHtml(note.grade)} löschen" title="Note löschen">×</button>
+                </div>`).join("")
+            : `<p class="no-grade">Noch keine Noten eingetragen</p>`;
+          return `
+            <details class="subject-card" ${count ? "open" : ""}>
+              <summary>
+                <span class="subject-emoji" aria-hidden="true">${emoji}</span>
+                <span class="subject-name">${subject}</span>
+                <span class="subject-count">${count} ${count === 1 ? "Note" : "Noten"}</span>
+                <span class="chevron" aria-hidden="true"></span>
+              </summary>
+              <div class="grade-list">${rows}</div>
+            </details>`;
+        }).join("");
+      }
+
+      document.querySelectorAll(".child-tab").forEach((tab) => {
+        tab.addEventListener("click", () => {
+          currentChild = tab.dataset.child;
+          render();
+        });
+      });
+
+      $("#dateInput").value = today();
+      $("#gradeForm").addEventListener("submit", (event) => {
+        event.preventDefault();
+        const subject = $("#subjectSelect").value;
+        const type = $("#typeSelect").value;
+        const grade = $("#gradeInput").value.trim();
+        const date = $("#dateInput").value;
+        if (!subject || !TYPES.includes(type) || !grade || !date) {
+          showToast("Bitte Fach, Art, Note und Datum ausfüllen.");
+          return;
+        }
+        data[currentChild].push({
+          id: newId(), subject, type, grade, date, createdAt: Date.now()
+        });
+        if (!saveData()) return;
+        $("#gradeInput").value = "";
+        $("#gradeInput").focus();
+        render();
+        showToast(`Note für ${currentChild} gespeichert.`);
+      });
+
+      $("#subjectList").addEventListener("click", (event) => {
+        const button = event.target.closest("[data-delete]");
+        if (!button) return;
+        const id = button.dataset.delete;
+        const note = data[currentChild].find((item) => item.id === id);
+        if (!note || !window.confirm(`Note „${note.grade}“ in ${note.subject} löschen?`)) return;
+        data[currentChild] = data[currentChild].filter((item) => item.id !== id);
+        saveData();
+        render();
+        showToast("Note gelöscht.");
+      });
+
+      function exportBackup() {
+        const backup = {
+          app: "Notenspiegel",
+          version: 1,
+          exportedAt: new Date().toISOString(),
+          children: data
+        };
+        const blob = new Blob([JSON.stringify(backup, null, 2)], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `notenspiegel-sicherung-${today()}.json`;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(url);
+        showToast("Datensicherung wurde erstellt.");
+      }
+      $("#exportTopButton").addEventListener("click", exportBackup);
+
+      $("#importButton").addEventListener("click", () => $("#importInput").click());
+      $("#importInput").addEventListener("change", async (event) => {
+        const file = event.target.files && event.target.files[0];
+        if (!file) return;
+        try {
+          const parsed = JSON.parse(await file.text());
+          const incoming = parsed.children || parsed;
+          if (!incoming || !Array.isArray(incoming.Simon) || !Array.isArray(incoming.Luisa)) {
+            throw new Error("Ungültiges Sicherungsformat");
+          }
+          let importedCount = 0;
+          for (const child of CHILDREN) {
+            for (const item of incoming[child]) {
+              if (!item || !SUBJECTS.some(([s]) => s === item.subject) ||
+                  !TYPES.includes(item.type) || typeof item.grade !== "string" ||
+                  !item.grade.trim() || typeof item.date !== "string") continue;
+              data[child].push({
+                id: newId(), subject: item.subject, type: item.type,
+                grade: item.grade.trim().slice(0, 16), date: item.date,
+                createdAt: Date.now()
+              });
+              importedCount++;
+            }
+          }
+          if (!importedCount) throw new Error("Keine gültigen Noten gefunden");
+          if (!saveData()) return;
+          render();
+          showToast(`${importedCount} ${importedCount === 1 ? "Note" : "Noten"} importiert.`);
+        } catch (error) {
+          showToast("Die Sicherungsdatei konnte nicht gelesen werden.");
+        } finally {
+          event.target.value = "";
+        }
+      });
+
+      window.addEventListener("beforeinstallprompt", (event) => {
+        event.preventDefault();
+        deferredInstallPrompt = event;
+        $("#installButton").style.display = "inline-flex";
+      });
+      $("#installButton").addEventListener("click", async () => {
+        if (!deferredInstallPrompt) return;
+        deferredInstallPrompt.prompt();
+        await deferredInstallPrompt.userChoice;
+        deferredInstallPrompt = null;
+        $("#installButton").style.display = "none";
+      });
+
+      if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
+        window.addEventListener("load", () => {
+          navigator.serviceWorker.register("./service-worker.js").catch((error) => {
+            console.warn("Offline-Funktion konnte nicht aktiviert werden.", error);
+          });
+        });
+      }
+      render();
+    })();
+  </script>
+</body>
+</html>
